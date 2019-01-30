@@ -1,7 +1,7 @@
-import { Feature } from "../manageExtension/Feature";
+import { Feature } from "../extensionManager/Feature";
 import Axios, { AxiosResponse } from "axios";
 import { XY } from "api/geometry";
-import { GeojsonUtils } from "../util/GeojsonUtils";
+import { GeojsonUtils } from "../utils/GeojsonUtils";
 
 /**
  * Service for the CHyF HTML request

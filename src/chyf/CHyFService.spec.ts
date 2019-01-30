@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { XY } from "api/geometry";
 import { chyfService } from "./ChyfService";
-import { Feature } from "src/manageExtension/Feature";
+import { Feature } from "../extensionManager/Feature";
 
 
 describe("CHyFService class tests", () => {
