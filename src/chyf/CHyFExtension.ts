@@ -44,11 +44,11 @@ export class CHyFExtension extends Extension {
         this._features = await chyfService.getFeatureByPoint(this._url, mapClickEvent.xy, removeHoles);
         this.setAttributesByFeatures(this._features);
         const geometries: BaseGeometry[] = GeojsonUtils.convertFeaturesToGeometries(this._features, this.renderStyleGeometries());
-        this.geometries = geometries;
+        this.setGeometries(geometries);
 
         // Trigger the layer click event for display the enhancedTable
         // The enhancedTable rz-extension must be include
-        map.layers._click.next(this._layer);
+        map.layers._click.next(this.getLayer());
     }
 }
 

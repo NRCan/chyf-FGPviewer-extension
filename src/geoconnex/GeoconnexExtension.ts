@@ -39,13 +39,13 @@ export class GeoconnexExtension extends Extension {
     public async actionBtn(map: Map): Promise<void> { 
         this._features = await geoconnexService.getFeaturesCatchments(this._url);
         const geometries: BaseGeometry[] = GeojsonUtils.convertFeaturesToGeometries(this._features, this.renderStyleGeometries());
-        this.geometries = geometries;
+        this.setGeometries(geometries);
     }
 
     public async actionMap(map: Map, mapClickEvent: MapClickEvent): Promise<void> {
 
         // Get the geometry from a point
-        const geometry: BaseGeometry =  GeojsonUtils.getGeometryFromPoint(mapClickEvent.xy, this._features, this.geometries);
+        const geometry: BaseGeometry =  GeojsonUtils.getGeometryFromPoint(mapClickEvent.xy, this._features, this.getGeometries());
         
         if(geometry) {
             const feature: Feature<CatchmentsProperties> = GeojsonUtils.convertGeometryToFeature(geometry, this._features);
@@ -69,7 +69,7 @@ export class GeoconnexExtension extends Extension {
         }
 
         // Set the informations
-        infoPanel.content = new infoPanel.container(
+        infoPanel.setBody(
             `
                 <div>${feature.properties.name} 
                 ${this.createHTMLButton("linked", feature.properties.uri)}
@@ -78,6 +78,11 @@ export class GeoconnexExtension extends Extension {
 
         // Manage the click event on the linked button
         $(`#${INFO_PANEL}`).find("button").on("click", (event: any) => {
+
+            if(event.currentTarget.getAttribute("aria-label") == "Close") {
+                return;
+            }
+            
             const uri: string = event.currentTarget.getAttribute("featureuri")
             this.manageLinkedDataPanel(map, uri);
         });
@@ -106,8 +111,7 @@ export class GeoconnexExtension extends Extension {
             linkedDataPanel = this.createLinkedDataPanel();
 
             // Create a layer for the linked geometries
-            const layer: SimpleLayer[] = await map.layers.addLayer("LinkedData");
-            this._layerLinkedData = layer[0];
+            this._layerLinkedData = await this.addLayer("LinkedData");
         }
 
         // Get the linked data objects
@@ -115,7 +119,7 @@ export class GeoconnexExtension extends Extension {
 
         // Convert the objects to a HTML list
         const html: string = this.createLinkedDataHTML(linkedDataObjs);  
-        linkedDataPanel.content = new linkedDataPanel.container(html);
+        linkedDataPanel.setBody(html);
 
         // Manage the click event from buttons
         $(`#${LINKED_DATA_PANEL}`).find("li").find("button").on("click", async (event: any) => {
@@ -131,7 +135,7 @@ export class GeoconnexExtension extends Extension {
             // If it is linked data
             uri = event.currentTarget.getAttribute("featureuri")
             if(uri) {
-                this._layerLinkedData.removeGeometry();
+                this.removeGeometries(this._layerLinkedData);
                 this.manageLinkedDataPanel(map, uri);
             }
         });
@@ -193,7 +197,7 @@ export class GeoconnexExtension extends Extension {
 
         let closeBtn = new infoPanel.button('X');
         closeBtn.element.css('float', 'right');
-        infoPanel.controls = [closeBtn];
+        infoPanel.setControls([closeBtn]);
 
         return infoPanel;
     }
@@ -213,9 +217,9 @@ export class GeoconnexExtension extends Extension {
 
         let title: string = new linkedDataPanel.container("<h2>Linked Data</h2>");
         let closeBtn: any = new linkedDataPanel.button("X");
-        let minimizeBtn: any = new linkedDataPanel.button("T");
+        //let minimizeBtn: any = new linkedDataPanel.button("T");
         closeBtn.element.css("float", "right");
-        linkedDataPanel.controls = [minimizeBtn, title, closeBtn];
+        linkedDataPanel.setControls([title, closeBtn]);
 
         return linkedDataPanel;
     }
@@ -232,8 +236,8 @@ export class GeoconnexExtension extends Extension {
             icon: "M255,0C114.75,0,0,114.75,0,255s114.75,255,255,255s255-114.75,255-255S395.25,0,255,0z M255,459    c-112.2,0-204-91.8-204-204S142.8,51,255,51s204,91.8,204,204S367.2,459,255,459z"
         });
 
-        this._layerLinkedData.removeGeometry();
-        this._layerLinkedData.addGeometry(geometries);
+        this.removeGeometries(this._layerLinkedData);
+        this.addGeometries(geometries, this._layerLinkedData);
     }
 
     /**
@@ -247,7 +251,7 @@ export class GeoconnexExtension extends Extension {
 
         switch (type) {
             case "html":
-                html = `<button class="md-icon-button primary md-button md-ink-ripple" type="button">
+                html = `<button class="md-icon-button aria-label="Html view" primary md-button md-ink-ripple" type="button">
                             <a target="_blank" href="${url}">
                                 <md-icon>
                                     <svg xmlns="http://www.w3.org/2000/svg" fit="" height="100%" width="100%" preserveAspectRatio="xMidYMid meet" viewBox="0 0 56 56" focusable="false">
@@ -272,7 +276,7 @@ export class GeoconnexExtension extends Extension {
                         </button>`
                 break;
             case "linked":
-                html = `<button featureuri="${url}" type="button" class="md-icon-button primary md-button md-ink-ripple" type="button">
+                html = `<button featureuri="${url}" type="button" aria-label="Linked data" class="md-icon-button primary md-button md-ink-ripple" type="button">
                             <md-icon>
                                 <svg xmlns="http://www.w3.org/2000/svg" fit="" height="100%" width="100%" preserveAspectRatio="xMidYMid meet" viewBox="0 0 314.000000 358.000000" focusable="false">
                                     <g transform="translate(0.000000,358.000000) scale(0.100000,-0.100000)" fill="#000000" stroke="none">
@@ -283,7 +287,7 @@ export class GeoconnexExtension extends Extension {
                         </button>`
                 break;
             case "geo":
-                html = `<button geojson="${url}" class="md-icon-button primary md-button md-ink-ripple" type="button">
+                html = `<button geojson="${url}" aria-label="Show geometries" class="md-icon-button primary md-button md-ink-ripple" type="button">
                             <md-icon>
                                 <svg xmlns="http://www.w3.org/2000/svg" fit="" height="100%" width="100%" preserveAspectRatio="xMidYMid meet" viewBox="0 0 24 24" focusable="false">
                                     <g id="place">

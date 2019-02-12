@@ -12,7 +12,7 @@ export abstract class Extension {
 
     protected _map: Map;
     protected _url: string;
-    protected _layer: SimpleLayer;
+    protected _layers: SimpleLayer[];
     protected _panels: Panel[];
     // The id of the extension
     protected _name: string;
@@ -26,7 +26,7 @@ export abstract class Extension {
 
         // Remove space in the name
         this._name = name.replace(/\s/g, '');
-        this._layer = null;
+        this._layers = [];
         this._panels = [];
         this._map = map;
     }
@@ -48,85 +48,145 @@ export abstract class Extension {
     }
 
     /**
-     * Set the extension's layer
-     * @param layer - The layer to set
+     * Get a layer by its name. If no name specify, the main layer is used.
+     * @param name - The layer's name
+     * @return The layer
      */
-    set layer(layer: SimpleLayer) {
-        this._layer = layer;
+    getLayer(name?: string): SimpleLayer {
+        if(name == null) {
+            return this._layers[0];
+        } else {
+            return this._layers.find( layer => layer.id == name);
+        }
     }
 
     /**
-     * Get the extension's attributes
+     * Add a layer to the extension
+     * @param name - The layer's name
+     */
+    async addLayer(name: string): Promise<SimpleLayer> {
+        const layers: SimpleLayer[] = await this._map.layers.addLayer(name);
+        this._layers.push(layers[0]);
+        return layers[0];
+    }
+
+    /**
+     * Get the extension's attributes. If no layer specify, the main layer is used.
+     * @param layer - The layer to get attributes
      * @return The extension's attributes
      */
-    get attributes(): any {
-        return this._layer.getAttributes();
+    getAttributes(layer?: SimpleLayer): any {
+        if(layer == null) {
+            return this._layers[0].getAttributes();
+        }
+        return layer.getAttributes();
     }
 
     /**
-     * Set the extension layer's attributes
+     * Set the extension layer's attributes. If no layer specify, the main layer is used.
      * @param attrs - The attributes to set
+     * @param layer - The layer to get attributes
      */
-    set attributes(attrs: any) {
-        if(!this._layer) {
-            throw new Error("The extension's layer is null");
-        }
+    setAttributes(attrs: any, layer?: SimpleLayer) {
 
         if (!(attrs instanceof Object)) {
             throw new Error("The attributes must be a object");
         }
 
-        this._layer._attributeArray = [attrs]; 
+        if(layer == null) {
+            return this._layers[0]._attributeArray = [attrs]; 
+        } else {
+            layer._attributeArray = [attrs]; 
+        }
+        
     }
 
     /**
-     * Set the extension layer's attributes by feature properties
+     * Set the extension layer's attributes by feature properties. If no layer specify, the main layer is used.
      * @param features - The features to parse 
+     * @param layer - The layer to get attributes
      */
-    setAttributesByFeatures(features: Feature<any>[]): void {
+    setAttributesByFeatures(features: Feature<any>[], layer?: SimpleLayer): void {
         let objs: any[] = [];
         features.forEach( (feature: Feature<any>) => {
             objs.push(feature.properties);
         });
 
-        this._layer._attributeArray = objs; 
-    }
-
-    /**
-     * Get the extension's geometries
-     * @return the extension's geometries
-     */
-    get geometries(): BaseGeometry[] {
-        return this._layer.geometry;
-    }
-
-    /**
-     * Set the extension layer's geometries 
-     * @param geometries - The geometries to change to
-     */
-    set geometries(geometries: BaseGeometry[]) {
-
-        // If the layer has geometries, remove them
-        if(this._layer.geometry && this._layer.geometry.length !== 0) {
-            this._layer.removeGeometry();
+        if(layer == null) {
+            this._layers[0]._attributeArray = objs; 
+        } else {
+            layer._attributeArray = objs; 
         }
-
-        this._layer.addGeometry(geometries);
     }
 
     /**
-     * Add geometries to the layer
+     * Get the extension's geometries. If no layer specify, the main layer is used.
+     * @param layer - The layer to get attributes
+     * @return The extension's geometries
+     */
+    getGeometries(layer?: SimpleLayer): BaseGeometry[] {
+        if(layer == null) {
+            return this._layers[0].geometry; 
+        }
+        return layer.geometry;
+    }
+
+    /**
+     * Set the extension layer's geometries. If no layer specify, the main layer is used.
+     * @param geometries - The geometries to change to
+     * @param layer - The layer to get attributes 
+     */
+    setGeometries(geometries: BaseGeometry[], layer?: SimpleLayer) {
+
+        if(layer == null) {
+            // If the layer has geometries, remove them
+            if(this._layers[0].geometry && this._layers[0].geometry.length !== 0) {
+                this._layers[0].removeGeometry();
+            }
+
+            this._layers[0].addGeometry(geometries); 
+        } else {
+            // If the layer has geometries, remove them
+            if(layer.geometry && layer.geometry.length !== 0) {
+                layer.removeGeometry();
+            }
+
+            layer.addGeometry(geometries);
+        }
+    }
+
+    /**
+     * Add geometries to the layer. If no layer specify, the main layer is used.
      * @param geometries - The geometries to add
+     * @param layer - The layer to get attributes
      */
-    public addGeometries(geometries: BaseGeometry[]) {
-        this._layer.addGeometry(geometries);
+    public addGeometries(geometries: BaseGeometry[], layer?: SimpleLayer) {
+        if(layer == null) {
+            this._layers[0].addGeometry(geometries);
+        } else {
+            layer.addGeometry(geometries);
+        }
     }
 
     /**
-     * Remove all geometries from a layer
+     * Remove all geometries from a layer. If no layer specify, the main layer is used.
+     * @param layer - The layer to get attributes
      */
-    public removeGeometries() {
-        this._layer.removeGeometry();
+    public removeGeometries(layer?: SimpleLayer) {
+        if(layer == null) {
+            this._layers[0].removeGeometry();
+        } else {
+            layer.removeGeometry();
+        }
+    }
+
+    /**
+     * Remove geometries for all layers
+     */
+    public removeAllGeometries() {
+        this._layers.forEach( (layer: SimpleLayer) => {
+            this.removeGeometries(layer);
+        });
     }
 
     /**
@@ -154,6 +214,22 @@ export abstract class Extension {
      */
     get HTMLElement(): string {
         return `<button id="${this._name}">${this._nameHTML}</button>`;
+    }
+
+    /**
+     * Close a panel
+     * @param panel - The panel to close
+     */
+    public closePanel(panel: Panel) {
+        this._panels.forEach( (panel: Panel) => panel.close()); 
+    }
+
+    /**
+     * Close all the panels
+     */
+    public closePanels() {
+        this._panels.find( (panel: Panel) => panel.id == panel.id ).close(); 
+        
     }
 
     /**
