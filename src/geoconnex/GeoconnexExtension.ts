@@ -1,12 +1,12 @@
 import { Map } from "api/map";
-import { Extension, RenderStyle } from "../manageExtension/Extension";
+import { Extension, RenderStyle } from "../extensionManager/Extension";
 import { BaseGeometry } from "api/geometry";
 import { MapClickEvent } from "api/events";
-import { Feature } from "../manageExtension/Feature";
+import { Feature } from "../extensionManager/Feature";
 import { Panel } from "api/panel";
 import { SimpleLayer } from "api/layers";
-import { geoconnexService, CatchmentsProperties, LinkedDataObj } from "../service/GeoconnexService";
-import { GeojsonUtils } from "../util/GeojsonUtils";
+import { geoconnexService, CatchmentsProperties, LinkedDataObj } from "./GeoconnexService";
+import { GeojsonUtils } from "../utils/GeojsonUtils";
 
 const LINKED_DATA_PANEL: string = "linkedDataPanel"
 const INFO_PANEL: string = "infoPanel";

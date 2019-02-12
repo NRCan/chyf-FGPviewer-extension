@@ -1,10 +1,10 @@
 import { Map } from "api/map";
-import { Extension, RenderStyle } from "../manageExtension/Extension";
+import { Extension, RenderStyle } from "../extensionManager/Extension";
 import { BaseGeometry } from "api/geometry";
 import { MapClickEvent } from "api/events";
-import { Feature } from "../manageExtension/Feature";
-import { chyfService } from "../service/ChyfService";
-import { GeojsonUtils } from "../util/GeojsonUtils";
+import { Feature } from "../extensionManager/Feature";
+import { chyfService } from "./ChyfService";
+import { GeojsonUtils } from "../utils/GeojsonUtils";
 
 /**
  * Hydraulic's extensions

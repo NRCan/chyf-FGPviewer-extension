@@ -1,6 +1,6 @@
-import { Extension } from "../manageExtension/Extension";
+import { Extension } from "../extensionManager/Extension";
 import { CHyFExtension } from "./CHyFExtension";
-import { ExtensionsManager } from "../manageExtension/ExtensionsManager";
+import { ExtensionsManager } from "../extensionManager/ExtensionsManager";
 import Map from "api/map";
 
 /**

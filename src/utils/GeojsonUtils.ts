@@ -1,4 +1,4 @@
-import { Feature } from "../manageExtension/Feature";
+import { Feature } from "../extensionManager/Feature";
 import { BaseGeometry, Polygon, XY } from "api/geometry";
 import * as inside from "point-in-polygon";
 

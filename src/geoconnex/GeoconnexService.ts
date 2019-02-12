@@ -1,6 +1,6 @@
 import Axios, { AxiosResponse } from "axios";
-import { Feature } from "../manageExtension/Feature";
-import { GeojsonUtils } from "../util/GeojsonUtils";
+import { Feature } from "../extensionManager/Feature";
+import { GeojsonUtils } from "../utils/GeojsonUtils";
 
 /**
  * Service for the Geoconnex HTML request
