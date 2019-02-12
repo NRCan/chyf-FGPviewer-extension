@@ -64,8 +64,7 @@ export class ExtensionsManager {
             this.addHTMLButton(extension);
 
             // Create a layer from the button
-            const layer: SimpleLayer[] = await this._map.layers.addLayer(extension.name);
-            extension.layer = layer[0];
+            const layer: SimpleLayer = await extension.addLayer(extension.name);
 
             // Manage click event on extension
             $(`#${extension.name}`).click( async () => {
@@ -85,7 +84,7 @@ export class ExtensionsManager {
             <li>
                 ${extension.HTMLElement}
                 <div class="clearExtension">
-                    <button ext="${extension.name}" type="button" class="md-icon-button primary md-ink-ripple">
+                    <md-button ext="${extension.name}" type="button" aria-label="${extension.name}" class="md-icon-button primary rv-icon-20 md-button md-ink-ripple">
                         <md-icon md-svg-src="action:search" class="ng-scope" role="img" aria-hidden="true">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="90%" height="90%" version="1.1">
                                 <g>
@@ -94,8 +93,9 @@ export class ExtensionsManager {
                                 </g>
                             </svg>
                         </md-icon>
-                    </button>
+                    </md-button>
                 </div>
+            </li>
         `);
     }
 
@@ -143,9 +143,9 @@ export class ExtensionsManager {
                 // Extension-specific actions
                 await this._selectedExtension.actionMap(this._map, mapClickEvent);
                 
-                // Allows to not open the details panel and to not change the opacity of the layer
+                // Allows to not open the details panel
                 $($(".rv-esri-map")[0]).removeClass("rv-map-highlight");
-                this._map.ui.panels.byId("main").open();
+                this._map.panelRegistryAttr.find( panel => panel.idAttr == "details").close();
 
                 if (!this._selectedExtension.persist()) {
                     this.deselectAll();
@@ -162,15 +162,20 @@ export class ExtensionsManager {
         $(`ul.${PANEL_EXTENSION}`).first().append(`<li>${component}</li>`);
     }
 
+    /**
+     * Add a button to clear the active layer.
+     */
     private manageClickEventClearButton(): void {
-        $(".clearExtension").find("button").click( (event: JQuery.Event) => {
+        $(".clearExtension").find("md-button").click( (event: JQuery.Event) => {
             const id = $(event.currentTarget).attr("ext");
             const extension = this._extensions.find( (extension: Extension) => {
                 return id == extension.name;
             });   
             
             if(extension) {
-                extension.removeGeometries();
+                extension.removeAllGeometries();
+                this.deselectAll();
+                extension.closePanels();
             }
         });
     }
