@@ -11,8 +11,9 @@ declare const RZ: any;
 export class GeojsonUtils {
     
     /**
-     * Parse a geoJSON and get features from it
+     * Parse a geoJSON (id, type, properties, geometries) and get features from it
      * @param json - The json to parse
+     * @param attrs - The additionnal attributes to fecth from a geoJSON
      */
     public static getFeaturesFromGeoJSON(json: any): Feature<any>[] {
         let features: Feature<any>[] = [];

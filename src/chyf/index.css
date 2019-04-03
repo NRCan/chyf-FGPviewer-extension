@@ -1,0 +1,65 @@
+.sectionTitle {
+    font-size: 1.2em;
+    margin: 10px 0;
+    font-weight: bold;
+}
+
+.pointInputTxt {
+    padding: 2px 5px;
+    width: 70%;
+    margin-bottom: 10px;
+}
+
+#addPourpointCode {
+    padding: 2px 5px;
+    margin-bottom: 10px;
+}
+
+#pointAddBtn {
+    width:100%;
+}
+
+/*Input Pourpoints*/
+.inputPourpointId {
+    width: 50px;
+}
+
+.inputPourpointCode {
+    width: 20px;
+}
+
+.inputPourpointPoint {
+    width: 134px;
+}
+
+#calculateBtn {
+    width: 100%;
+}
+
+.form-check-input {
+    float: left;
+}
+
+.form-check {
+    margin: 5px 0 0;
+}
+
+.tablinks {
+    width: 100%;
+    padding: 4px 0;
+}
+
+table.pourpointTable td, table.pourpointTable th {
+    padding: 5px;
+    text-align: left;
+}
+
+table.pourpointTable, table.pourpointTable th, table.pourpointTable td {
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+
+.pourpointIconBtn {
+    padding: 2px 5px;
+    width: 25px;
+}

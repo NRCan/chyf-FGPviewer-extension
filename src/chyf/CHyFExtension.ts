@@ -48,7 +48,7 @@ export class CHyFExtension extends Extension {
 
         // Trigger the layer click event for display the enhancedTable
         // The enhancedTable rz-extension must be include
-        map.layers._click.next(this.getLayer());
+        //map.layers._click.next(this.getLayer());
     }
 }
 

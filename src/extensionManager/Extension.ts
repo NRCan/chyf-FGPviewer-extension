@@ -65,9 +65,18 @@ export abstract class Extension {
      * @param name - The layer's name
      */
     async addLayer(name: string): Promise<SimpleLayer> {
-        const layers: SimpleLayer[] = await this._map.layers.addLayer(name);
-        this._layers.push(layers[0]);
-        return layers[0];
+
+        const layer = this._layers.find( (layer: SimpleLayer) => {
+            return layer.id == name;
+        });
+
+        if(!layer) {
+            const layers: SimpleLayer[] = await this._map.layers.addLayer(name);
+            this._layers.push(layers[0]);
+            return layers[0];
+        } else {
+            return layer;
+        } 
     }
 
     /**
@@ -136,7 +145,7 @@ export abstract class Extension {
      * @param geometries - The geometries to change to
      * @param layer - The layer to get attributes 
      */
-    setGeometries(geometries: BaseGeometry[], layer?: SimpleLayer) {
+    setGeometries(geometries: BaseGeometry | Array<BaseGeometry>, layer?: SimpleLayer) {
 
         if(layer == null) {
             // If the layer has geometries, remove them
@@ -160,7 +169,7 @@ export abstract class Extension {
      * @param geometries - The geometries to add
      * @param layer - The layer to get attributes
      */
-    public addGeometries(geometries: BaseGeometry[], layer?: SimpleLayer) {
+    public addGeometries(geometries: BaseGeometry | BaseGeometry[], layer?: SimpleLayer) {
         if(layer == null) {
             this._layers[0].addGeometry(geometries);
         } else {
@@ -172,11 +181,11 @@ export abstract class Extension {
      * Remove all geometries from a layer. If no layer specify, the main layer is used.
      * @param layer - The layer to get attributes
      */
-    public removeGeometries(layer?: SimpleLayer) {
+    public removeGeometries(layer?: SimpleLayer, geometriesIds?: string[] | string) {
         if(layer == null) {
-            this._layers[0].removeGeometry();
+            this._layers[0].removeGeometry(geometriesIds);
         } else {
-            layer.removeGeometry();
+            layer.removeGeometry(geometriesIds);
         }
     }
 
@@ -228,7 +237,11 @@ export abstract class Extension {
      * Close all the panels
      */
     public closePanels() {
-        this._panels.find( (panel: Panel) => panel.id == panel.id ).close(); 
+        try {
+            this._panels.find( (panel: Panel) => panel.id == panel.id ).close(); 
+        } catch(error) {
+
+        }
         
     }
 

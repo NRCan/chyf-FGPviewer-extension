@@ -13,15 +13,14 @@ export class ExtensionsManager {
     private _map: Map;
     private _name: String;
     private _extensions: Extension[];
-    private _selectedExtension: Extension;
 
     public constructor(api: Map, name: string) {
-        
         // Remove space in the name   
         this._name = name.replace(/\s/g, '');
+        // Global variable to know which extension is selected
+        (<any>window).SELECTED_EXTENSION = null;
         this._map = api;
         this._extensions = [];
-        this._selectedExtension = null;
         this.init(); 
     }
 
@@ -105,12 +104,13 @@ export class ExtensionsManager {
      */
     private async manageClickEventBtn(extension: Extension): Promise<void> {
 
-        if(extension === this._selectedExtension) {
+        //if(extension === this._selectedExtension) {
+        if( (<any>window).SELECTED_EXTENSION === extension ) {
             this.deselectAll();
         } else {
             // Need to deselect every buttons when we select a new button for remove unwanted state
             this.deselectAll();
-            this._selectedExtension = extension;
+            (<any>window).SELECTED_EXTENSION = extension;
             $(`#${extension.name}`).css("background-color", "#ECECEC");
             // Extension-specific actions
             await extension.actionBtn(this._map);
@@ -121,15 +121,15 @@ export class ExtensionsManager {
      * Remove selected state and style for every buttons
      */
     private deselectAll(): void {
-        const extensionsBaseHTMLElement = $(`ul.${PANEL_EXTENSION}`).first();
-        const liArray: Element[] = Array.from(extensionsBaseHTMLElement[0].children); 
-        liArray.forEach( (li: Element) =>  {
-            li.children[0].removeAttribute("style");
+        $(`ul.${PANEL_EXTENSION}`).toArray().forEach((panel) => {
+            const liArray: Element[] = Array.from(panel.children); 
+            liArray.forEach( (li: HTMLElement) => {
+                li.children[0].removeAttribute("style");
+            });
         });
 
         this._map.mapI.setMapCursor("default");
-
-        this._selectedExtension = null;
+        (<any>window).SELECTED_EXTENSION = null;
     }
 
     /**
@@ -138,16 +138,17 @@ export class ExtensionsManager {
     private manageClickEventMap(): void {
         this._map.click.subscribe( async (mapClickEvent: MapClickEvent) => {
 
-            if( this._selectedExtension ) {
+            const selectedExtension = (<any>window).SELECTED_EXTENSION;
+            if(selectedExtension) {
 
                 // Extension-specific actions
-                await this._selectedExtension.actionMap(this._map, mapClickEvent);
+                await selectedExtension.actionMap(this._map, mapClickEvent);
                 
                 // Allows to not open the details panel
                 $($(".rv-esri-map")[0]).removeClass("rv-map-highlight");
                 this._map.panelRegistryAttr.find( panel => panel.idAttr == "details").close();
 
-                if (!this._selectedExtension.persist()) {
+                if (!selectedExtension.persist()) {
                     this.deselectAll();
                 }
             }

@@ -2,6 +2,7 @@ import { Extension } from "../extensionManager/Extension";
 import { CHyFExtension } from "./CHyFExtension";
 import { ExtensionsManager } from "../extensionManager/ExtensionsManager";
 import Map from "api/map";
+import { PourpointExtension } from "./PourpointExtension";
 
 /**
  * Global object called by the "rz-extensions".
@@ -14,9 +15,10 @@ import Map from "api/map";
         const flowpathDownstream: Extension = new CHyFExtension(api, "Flowpaths Downstream", "http://dev.geogratis.gc.ca:8012/chyf/eflowpath/downstreamOf.json");
         const upstream: Extension = new CHyFExtension(api, "Drainages Upstream","http://dev.geogratis.gc.ca:8012/chyf/drainageArea/upstreamOf.json");
         const downstream: Extension = new CHyFExtension(api, "Drainages Downstream","http://dev.geogratis.gc.ca:8012/chyf/drainageArea/downstreamOf.json");
+        const pourpoint: Extension = new PourpointExtension(api, "Pourpoint", "http://chyf.ca/chyf/pourpoint/compute.json");
 
         manageExtension.addHTMLComponent(`<div class="list-extensions">Remove Holes: <input id="removeHoles" type="checkbox" value="holes"></div>`);
-        manageExtension.addExtensions([upstream, downstream, flowpathUpstream, flowpathDownstream]);
+        manageExtension.addExtensions([upstream, downstream, flowpathUpstream, flowpathDownstream, pourpoint]);
     }
 };
 

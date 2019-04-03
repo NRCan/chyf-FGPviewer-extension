@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { Feature } from "src/manageExtension/Feature";
+import { Feature } from "src/extensionManager/Feature";
 import { GeojsonUtils } from "./GeojsonUtils";
 
 

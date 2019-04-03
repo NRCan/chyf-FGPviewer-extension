@@ -165,7 +165,6 @@ export class GeoconnexExtension extends Extension {
                 listItemsHTML += this.createHTMLButton("geo", uri);
                 ;
             });
-
             listItemsHTML += `</li>`;
         });
 
@@ -251,7 +250,7 @@ export class GeoconnexExtension extends Extension {
 
         switch (type) {
             case "html":
-                html = `<button class="md-icon-button aria-label="Html view" primary md-button md-ink-ripple" type="button">
+                html = `<button class="md-icon-button primary md-button md-ink-ripple" aria-label="Html view" type="button">
                             <a target="_blank" href="${url}">
                                 <md-icon>
                                     <svg xmlns="http://www.w3.org/2000/svg" fit="" height="100%" width="100%" preserveAspectRatio="xMidYMid meet" viewBox="0 0 56 56" focusable="false">
