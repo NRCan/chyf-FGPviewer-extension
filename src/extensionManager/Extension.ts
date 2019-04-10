@@ -203,6 +203,14 @@ export abstract class Extension {
      * @param panel - The panel to add
      */
     public addPanel(name: string): Panel {
+        const exist = this._panels.find( (panel: Panel) => {
+            return panel.id == name
+        });
+
+        if(exist) {
+            return exist;
+        }
+
         const panel: Panel = this._map.createPanel(name);
         this._panels.push(panel)
         return panel;

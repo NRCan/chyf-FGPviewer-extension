@@ -13,14 +13,23 @@ export class ExtensionsManager {
     private _map: Map;
     private _name: String;
     private _extensions: Extension[];
+    private _HTMLName: string = "";
+    private _baseMapChanged = false;
 
     public constructor(api: Map, name: string) {
+        this._HTMLName = name;
         // Remove space in the name   
         this._name = name.replace(/\s/g, '');
+        this._map = api;
+
+        if( $(`#mainExtensions${this._name}`).length != 0 ) {
+            this._baseMapChanged = true;
+        }
+
         // Global variable to know which extension is selected
         (<any>window).SELECTED_EXTENSION = null;
-        this._map = api;
         this._extensions = [];
+
         this.init(); 
     }
 
@@ -36,13 +45,18 @@ export class ExtensionsManager {
      * Create the HTML extensions base component.
      */
     private createHTMLBaseComponent(): void {
-
         if ( $("ul.rv-legend-level-0").length ) {
+
+            // Check if basemap has changed to not duplicate extensions
+            if(this._baseMapChanged) {
+                return;
+            }
+
             // Create the HTML base for the extensions
             $("ul.rv-legend-level-0").after(
                 `<div class="ng-isolate-scope border-top">
-                    <div class="main-appbar rv-whiteframe-z2">
-                        <h2 class="md-headline title-extensions ng-scope">${this._name}</h2>
+                    <div id="mainExtensions${this._name}" class="main-appbar rv-whiteframe-z2">
+                        <h2 class="md-headline title-extensions ng-scope">${this._HTMLName}</h2>
                     </div>
                 </div>
                 
@@ -57,11 +71,19 @@ export class ExtensionsManager {
      * @param extensions - The extensions to add
      */
     public addExtensions(extensions: Extension[]): void {
+
+        if(this._baseMapChanged) {
+            return;
+        } 
+
         extensions.forEach( async (extension: Extension, index: number) => {
+
             this._extensions.push(extension);
         
-            this.addHTMLButton(extension);
-
+            if(!this._baseMapChanged) {
+                this.addHTMLButton(extension);
+            } 
+            
             // Create a layer from the button
             const layer: SimpleLayer = await extension.addLayer(extension.name);
 
@@ -105,7 +127,12 @@ export class ExtensionsManager {
     private async manageClickEventBtn(extension: Extension): Promise<void> {
 
         //if(extension === this._selectedExtension) {
-        if( (<any>window).SELECTED_EXTENSION === extension ) {
+        if( (<any>window).SELECTED_EXTENSION === null) { 
+            (<any>window).SELECTED_EXTENSION = {
+                name: ""
+            }
+        }
+        if( (<any>window).SELECTED_EXTENSION.name === extension.name ) {
             this.deselectAll();
         } else {
             // Need to deselect every buttons when we select a new button for remove unwanted state
@@ -160,7 +187,9 @@ export class ExtensionsManager {
      * @param component - The component to add
      */
     public addHTMLComponent(component: string): void {
-        $(`ul.${PANEL_EXTENSION}`).first().append(`<li>${component}</li>`);
+        if(!this._baseMapChanged) {
+            $(`ul.${PANEL_EXTENSION}`).first().append(`<li>${component}</li>`);
+        } 
     }
 
     /**

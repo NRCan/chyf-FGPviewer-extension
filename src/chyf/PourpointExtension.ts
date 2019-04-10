@@ -16,6 +16,7 @@ const POINT_INPUT_TEXT_ID = "pointInputTxt";
 const POURPOINT_PANEL_INFO_ID = "mainPourpointInfo";
 const CLEAR_INPUT_POURPOINT_CLASS = "clearInputBtn";
 const POINT_ERR_LBL = "lblPointError";
+const CALCULATE_ERR_LBL = "lblCalculateError";
 
 // Button ids
 const POINT_ADD_BTN_ID = "pointAddBtn";
@@ -48,7 +49,6 @@ export enum CODE {
     InteriorCatchments = "ic",
     PourpointRelationshipTree = "prt",
     Catchments = "c",
-
 }
 
 export class PourpointExtension extends Extension {
@@ -63,6 +63,7 @@ export class PourpointExtension extends Extension {
     // Show catchments for the mouseover event 
     private _layerOverview: SimpleLayer = null;
     private _lastIdClikedPoint: string;
+    private lastGeo: BaseGeometry = null;
 
     constructor(map: Map, name: string, url: string) {
         super(map, name, url);
@@ -155,7 +156,7 @@ export class PourpointExtension extends Extension {
             <div id="pourpointAdd">
                 <div>
                     <span class="labelPourpoint">Point: </span>
-                    <input type="text" id="${POINT_INPUT_TEXT_ID}" class="${POINT_INPUT_TEXT_ID}" value="-73.27366, 45.46230">
+                    <input type="text" id="${POINT_INPUT_TEXT_ID}" class="${POINT_INPUT_TEXT_ID}" value="">
                     <button id="${SELET_ON_MAP_BTN_ID}" class="pourpointIconBtn">
                         <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Layer_1" x="0px" y="0px" viewBox="0 0 512 512" style="enable-background:new 0 0 512 512;" xml:space="preserve">
                             <g>
@@ -167,7 +168,7 @@ export class PourpointExtension extends Extension {
             </div>
 
             <div>
-                <p id="${POINT_ERR_LBL}" style="display: none;">Le point n'est pas valide</p>
+                <p id="${POINT_ERR_LBL}" class="error" style="display: none;"></p>
                 <button id="${POINT_ADD_BTN_ID}" type="button" title="Add Point">Add Point</button>
             </div>
 
@@ -227,6 +228,7 @@ export class PourpointExtension extends Extension {
 
             <div class="sectionTitle">Actions</div>
             <div>
+                <p id="${CALCULATE_ERR_LBL}" class="error" style="display: none;"></p>
                 <button id=${CALCULATE_BTN_ID}>Calculate</button>
             <div>
             `
@@ -245,10 +247,10 @@ export class PourpointExtension extends Extension {
 
             // Check if the point is valid
             if(!xy) {
-                (<HTMLInputElement>$(`#${POINT_ERR_LBL}`)[0]).style.display = "block";
+                this.showErrorMsg(POINT_ERR_LBL, "The point is not valid");
             } else {
                 this.manageAddPointButton(xy);
-                (<HTMLInputElement>$(`#${POINT_ERR_LBL}`)[0]).style.display = "none";
+                this.clearErrorMsgs();
             }
         })
 
@@ -265,6 +267,14 @@ export class PourpointExtension extends Extension {
 
         // Event trigger when we calculate the input pourpoints
         $(`#${CALCULATE_BTN_ID}`).click( async () => {
+
+            this.clearErrorMsgs();
+
+            // Check if there is at least one entry 
+            if(this._inputPourpoints.length == 0) {
+                this.showErrorMsg(CALCULATE_ERR_LBL, "You must select at least one point");
+                return;
+            }
 
             loader.start();
             // Remove the last calculated catchments
@@ -284,24 +294,46 @@ export class PourpointExtension extends Extension {
             let includeStats: boolean = (<HTMLInputElement>$(`#${INCLUDE_CBX_ID}`)[0]).checked
 
             // Get all the calculated input pourpoint objects
-            const pourpointDataObjs: PourpointDataObj[] = await chyfService.getPourpointData(this.url, this._inputPourpoints, opts, removeHole, includeStats);
-            
-            if(!this._pourpointInfoPanel) {
-                this._pourpointInfoPanel = this.createPourpointInfoPanel();
-            }
-            this.setBodyPourpointInfoPanel(pourpointDataObjs);
-            this._pourpointInfoPanel.open();
-            this.createPourpointInfoTabsBtnEvents(pourpointDataObjs);
+            let pourpointDataObjs: PourpointDataObj[] = null;
+            try {
+                pourpointDataObjs = await chyfService.getPourpointData(this.url, this._inputPourpoints, opts, removeHole, includeStats);
+                
+                if(!this._pourpointInfoPanel) {
+                    this._pourpointInfoPanel = this.createPourpointInfoPanel();
+                }
+                this.setBodyPourpointInfoPanel(pourpointDataObjs);
+                this._pourpointInfoPanel.open();
+                this.createPourpointInfoTabsBtnEvents(pourpointDataObjs);
 
-            // Show the main catchments on map
-            const catchmentObj = pourpointDataObjs.find( (obj:PourpointDataObj) => obj.code == CODE.Catchments);
-            catchmentObj.features.forEach( (features: Feature<any>) => {
-                this._features = GeojsonUtils.getFeaturesFromGeoJSON(features);
-                const geos = GeojsonUtils.convertFeaturesToGeometries(this._features,this.renderStyleGeometries());
-                this.addGeometries(geos);
-            });
-            loader.stop();
+                // Show the main catchments on map
+                const catchmentObj = pourpointDataObjs.find( (obj:PourpointDataObj) => obj.code == CODE.Catchments);
+                catchmentObj.features.forEach( (features: Feature<any>) => {
+                    this._features = GeojsonUtils.getFeaturesFromGeoJSON(features);
+                    const geos = GeojsonUtils.convertFeaturesToGeometries(this._features,this.renderStyleGeometries());
+                    this.addGeometries(geos);
+                });
+                loader.stop();
+            } catch(err) {
+                this.showErrorMsg(CALCULATE_ERR_LBL, "Invalid entry points");
+                loader.stop();
+            }
         });
+    }
+
+    /**
+     * Show an error message
+    */
+   private showErrorMsg(id: string, msg: string) {
+        (<HTMLInputElement>$(`#${id}`)[0]).innerHTML = `${msg}`;
+        (<HTMLInputElement>$(`#${id}`)[0]).style.display = "block";
+    }
+
+    /**
+     * Clear all error messages
+    */
+    private clearErrorMsgs() {
+        (<HTMLInputElement>$(`#${CALCULATE_ERR_LBL}`)[0]).style.display = "none";
+        (<HTMLInputElement>$(`#${POINT_ERR_LBL}`)[0]).style.display = "none";
     }
 
     /**
@@ -312,7 +344,7 @@ export class PourpointExtension extends Extension {
         this.addGeometries(point, this._layerClickedPoint);
         this._lastIdClikedPoint = point.id;
         // Add the geometries to the inputs
-        this._inputPourpoints[this._inputPourpoints.length-1].geo = point;
+        this.lastGeo = point;
     }
 
     /**
@@ -321,7 +353,7 @@ export class PourpointExtension extends Extension {
     private manageAddPointButton(xy: XY) {
         // create a new input pourpoint and show it on the panel
         const code: number = Number.parseFloat(((<HTMLInputElement>$("#addPourpointCode")[0]).value));
-        const pourpoint: InputPourpoint = new InputPourpoint(xy, code, `P${this._inputPourpoints.length+1}`);
+        const pourpoint: InputPourpoint = new InputPourpoint(xy, code, `P${this._inputPourpoints.length+1}`, this.lastGeo);
         this._inputPourpoints.push(pourpoint);
         this.addHTMLInputPourpoint(pourpoint);
 
@@ -391,7 +423,7 @@ export class PourpointExtension extends Extension {
             this.removeGeometries(this._layerClickedPoint, pourpoint.geo.id);
         });
     }
-
+    
     /*
     ------------ INFO CATCHMENTS SECTION ------------
     Display information about the calculated input pourpoints
@@ -646,7 +678,7 @@ export class PourpointExtension extends Extension {
             if (text != "id") {
                 const feature: Feature<any> = pourpointDataObj.features.find( (feature:Feature<any>) => feature.properties.id == text);
                 if(feature) {
-                    const geometry: BaseGeometry[] = GeojsonUtils.convertFeaturesToGeometries([feature], {outlineWidth: 0, fillColor: '#252425', fillOpacity: 0.3});
+                    const geometry: BaseGeometry[] = GeojsonUtils.convertFeaturesToGeometries([feature], {outlineWidth: 0, fillColor: '#a51f1f', fillOpacity: 0.3});
                     this.addGeometries(geometry, this._layerOverview);
                 }
             }
@@ -720,10 +752,11 @@ export class InputPourpoint {
     private _point : XY;
     private _geo: BaseGeometry;
 
-    constructor(point: XY, code: number, id: string) {
+    constructor(point: XY, code: number, id: string, geo: BaseGeometry) {
         this._code = code;
         this._id = id;
         this._point = point;
+        this._geo = geo;
     }
 
     set geo(geo: BaseGeometry) {

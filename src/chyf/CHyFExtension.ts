@@ -5,6 +5,9 @@ import { MapClickEvent } from "api/events";
 import { Feature } from "../extensionManager/Feature";
 import { chyfService } from "./ChyfService";
 import { GeojsonUtils } from "../utils/GeojsonUtils";
+import { Panel } from "api/panel";
+
+const PANEL_TABLE_NAME = "panelTableName";
 
 /**
  * Hydraulic's extensions
@@ -31,7 +34,7 @@ export class CHyFExtension extends Extension {
     }
 
     public async actionBtn(map: Map): Promise<void> { 
-            map.mapI.setMapCursor("crosshair");
+        map.mapI.setMapCursor("crosshair");
     }
 
     public async actionMap(map: Map, mapClickEvent: MapClickEvent): Promise<void> {
@@ -46,9 +49,51 @@ export class CHyFExtension extends Extension {
         const geometries: BaseGeometry[] = GeojsonUtils.convertFeaturesToGeometries(this._features, this.renderStyleGeometries());
         this.setGeometries(geometries);
 
-        // Trigger the layer click event for display the enhancedTable
-        // The enhancedTable rz-extension must be include
-        //map.layers._click.next(this.getLayer());
+        let panelTable: Panel = this.createTablePanel();
+        const HTMLTable = this.createInfoTable();
+        this.setBodyPanel(panelTable, HTMLTable);
+        panelTable.open();
+    }
+
+        /**
+     * Return the information table
+    */
+    private createInfoTable(): string {
+        let table = `<table id="pourpointFeatureTable" class="pourpointTable">`;
+
+        table += `<thread">`;
+        Object.keys(this._features[0].properties).forEach( (key: string) => { 
+            table += `<th>${key}</th>`
+        });
+        table += `</thread">`;
+
+        this._features.forEach( (feature: Feature<any>) => {
+            table += `<tr>`;
+            Object.values(feature.properties).forEach( (property: string) =>{
+                table += `<td>${property}</td>`;
+            });
+            table += `</tr>`;
+        });
+
+        table += `</table>`;
+
+        return table
+    }
+
+    private createTablePanel(): Panel {
+        const pourpointPanel = this.addPanel(PANEL_TABLE_NAME);
+        const title = new pourpointPanel.container("<h2>Information</h2>");
+        const closeBtn = new pourpointPanel.button("X");
+
+        pourpointPanel.panelContents.css({left: "410px", width: "60%", height: "250px"});
+        closeBtn.element.css("float", "right");
+
+        pourpointPanel.setControls([title, closeBtn]);
+        return pourpointPanel;
+    }
+
+    private setBodyPanel(panel: Panel, info: string) {
+        panel.setBody(info);
     }
 }
 
