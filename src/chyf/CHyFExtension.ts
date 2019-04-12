@@ -1,40 +1,24 @@
 import { Map } from "api/map";
-import { Extension, RenderStyle } from "../manageExtension/Extension";
-import { XY, BaseGeometry, Polygon, MultiPolygon } from "api/geometry";
-import { AxiosResponse,  } from "axios";
+import { Extension, RenderStyle } from "../extensionManager/Extension";
+import { BaseGeometry } from "api/geometry";
 import { MapClickEvent } from "api/events";
-const axios = require('axios');
+import { Feature } from "../extensionManager/Feature";
+import { chyfService } from "./ChyfService";
+import { GeojsonUtils } from "../utils/GeojsonUtils";
+import { Panel } from "api/panel";
+
+const PANEL_TABLE_NAME = "panelTableName";
 
 /**
  * Hydraulic's extensions
  */
 export class CHyFExtension extends Extension {
 
-    constructor(name: string, url: string) {
-        super(name, url);
-    }
+    private _features: Feature<any>[];
 
-    protected async getJSON(point: XY): Promise<Object> {
-        const response: AxiosResponse = await axios.get(`${this._url}?point=${point.x},${point.y}&removeHoles=false`)
-        return response.data;
-    }
-
-    protected parse(json: ResponseJSON): BaseGeometry {
-        let points: XY[] = [];
-        let polygons: Polygon[] = [];
-
-        switch (json.geometry.type) {
-            case "Polygon":
-                points.push(json.geometry.coordinates[0]);
-                return new Polygon(1000, points, this.renderStyleGeometries);
-            case "MultiPolygon":
-                json.geometry.coordinates.forEach ( (coordinates: any[], index: number) => {
-                    points.push(coordinates[0]);
-                    polygons.push(new Polygon(1000+index, points, this.renderStyleGeometries));
-                    points = [];
-                }); 
-                return new MultiPolygon(100000, polygons, this.renderStyleGeometries);
-        }
+    constructor(map: Map, name: string, url: string) {
+        super(map, name, url);
+        this._features = [];
     }
 
     public renderStyleGeometries(): RenderStyle {
@@ -45,21 +29,75 @@ export class CHyFExtension extends Extension {
                 };
     }
 
+    public persist(): boolean {
+        return false;
+    }
+
     public async actionBtn(map: Map): Promise<void> { 
-            map.mapI.setMapCursor("crosshair");
+        map.mapI.setMapCursor("crosshair");
     }
 
     public async actionMap(map: Map, mapClickEvent: MapClickEvent): Promise<void> {
-        const geometries: BaseGeometry = await this.fetch(mapClickEvent.xy);
+
+        let removeHoles: boolean = false;
+        if($("#removeHoles")) {
+            removeHoles = (<any>($("#removeHoles")[0])).checked;
+        }
+
+        this._features = await chyfService.getFeatureByPoint(this._url, mapClickEvent.xy, removeHoles);
+        this.setAttributesByFeatures(this._features);
+        const geometries: BaseGeometry[] = GeojsonUtils.convertFeaturesToGeometries(this._features, this.renderStyleGeometries());
         this.setGeometries(geometries);
 
-        // Trigger the layer click event for display the enhancedTable
-        // The enhancedTable rz-extension must be include
-        map.layers._click.next(this._layer);
+        let panelTable: Panel = this.createTablePanel();
+        const HTMLTable = this.createInfoTable();
+        this.setBodyPanel(panelTable, HTMLTable);
+        panelTable.open();
+    }
+
+        /**
+     * Return the information table
+    */
+    private createInfoTable(): string {
+        let table = `<table id="pourpointFeatureTable" class="pourpointTable">`;
+
+        table += `<thread">`;
+        Object.keys(this._features[0].properties).forEach( (key: string) => { 
+            table += `<th>${key}</th>`
+        });
+        table += `</thread">`;
+
+        this._features.forEach( (feature: Feature<any>) => {
+            table += `<tr>`;
+            Object.values(feature.properties).forEach( (property: string) =>{
+                table += `<td>${property}</td>`;
+            });
+            table += `</tr>`;
+        });
+
+        table += `</table>`;
+
+        return table
+    }
+
+    private createTablePanel(): Panel {
+        const pourpointPanel = this.addPanel(PANEL_TABLE_NAME);
+        const title = new pourpointPanel.container("<h2>Information</h2>");
+        const closeBtn = new pourpointPanel.button("X");
+
+        pourpointPanel.panelContents.css({left: "410px", width: "60%", height: "250px"});
+        closeBtn.element.css("float", "right");
+
+        pourpointPanel.setControls([title, closeBtn]);
+        return pourpointPanel;
+    }
+
+    private setBodyPanel(panel: Panel, info: string) {
+        panel.setBody(info);
     }
 }
 
-export interface ResponseJSON {
+export interface ResponseChyfJSON {
     ID: number,
     geometry: {
         type: string,
@@ -68,8 +106,8 @@ export interface ResponseJSON {
     properties: {
         area?: number
     },
-    responseMetadata: {
+    responseMetadata?: {
         executionTime: number
     },
-    type: string
+    type?: string
 }

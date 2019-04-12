@@ -1,0 +1,13 @@
+{
+    "name": "geoconnex-extensions",
+    "version": "0.1.0",
+    "description": "Geoconnex extensions for the RAMP",
+    "scripts": {},
+    "keywords": [
+        "extension",
+        "RAMP"
+    ],
+    "author": "Dave Brochu",
+    "license": "ISC",
+    "devDependencies": {}
+}

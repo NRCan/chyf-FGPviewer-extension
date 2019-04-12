@@ -1,0 +1,21 @@
+{
+    "compilerOptions": {
+        "allowJs": true,
+        "baseUrl": "./",
+        "target": "ES2016",
+        "paths": {
+            "api/*": ["../../../fgpv-vpgf/api/src/*"],
+            "app/*": ["../../../fgpv-vpgf/src/app/*"]
+        },
+        "lib": ["dom", "es6", "es2016", "es2017.object"],
+        "noImplicitAny": false,
+        "noImplicitThis": true,
+        "strictNullChecks": false,
+        "allowSyntheticDefaultImports": true,
+        "experimentalDecorators": true,
+        "moduleResolution": "node",
+    },
+    "exclude": [
+        "./node_modules"
+    ]
+}

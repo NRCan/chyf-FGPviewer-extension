@@ -3,10 +3,12 @@ const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 
 const SOURCE_PATH = path.join(__dirname, './src');
 const CHYF_PATH = path.join(SOURCE_PATH, './chyf');
+const GEOCONNEX_PATH = path.join(SOURCE_PATH, './geoconnex');
 
 module.exports = {
   entry: {
-      chyf: path.join(CHYF_PATH, './index.ts'),
+      chyf: path.join(CHYF_PATH, "./index.ts"),
+      geoconnex: path.join(GEOCONNEX_PATH, "./index.ts")
   },
   module: {
     rules: [
